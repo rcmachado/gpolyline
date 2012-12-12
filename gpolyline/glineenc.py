@@ -24,15 +24,11 @@
 import math
 
 
-threshold = .00001
 num_levels = 4
 zoom_factor = 32
-zoom_level_breaks = []
-for i in range(num_levels):
-    zoom_level_breaks.append(threshold * (zoom_factor ** (num_levels - i - 1)))
 
 
-def encode_pairs(points):
+def encode_pairs(points, threshold=0.00001):
     """Encode a set of lat/long points.
 
     ``points``
@@ -55,7 +51,7 @@ def encode_pairs(points):
     encoded_points = []
     encoded_levels = []
 
-    distances = douglas_peucker_distances(points)
+    distances = douglas_peucker_distances(points, threshold)
     points_of_interest = []
     for i, d in enumerate(distances):
         if d is not None:
@@ -121,7 +117,7 @@ def encode_unsigned(n):
     tmp = ''.join(tmp)
     return tmp    
 
-def douglas_peucker_distances(points):
+def douglas_peucker_distances(points, threshold=0.00001):
     distances = [None] * len(points)
     distances[0] = threshold * (zoom_factor ** num_levels)
     distances[-1] = distances[0]
@@ -172,14 +168,23 @@ def distance(point, A, B):
             )
     return out
 
-def compute_level(distance):
+def compute_level(distance, threshold=0.00001):
     """Compute the appropriate zoom level of a point in terms of its 
     distance from the relevant segment in the DP algorithm."""
+    zoom_level_breaks = compute_zoom_level_breaks(threshold)
     if distance > threshold:
         level = 0
     while distance < zoom_level_breaks[level]:
         level += 1
     return level
+
+
+def compute_zoom_level_breaks(threshold=0.00001):
+    zoom_level_breaks = []
+    for i in range(num_levels):
+        zoom_level_breaks.append(threshold * (zoom_factor ** (num_levels - i - 1)))
+    return zoom_level_breaks
+
 
 def test_encode_negative():
     f = -179.9832104
